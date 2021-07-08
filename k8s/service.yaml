@@ -6,5 +6,5 @@ spec:
   selector:
     app: k8s-dashboard        
   ports:
-  - port: 80
+  - port: 8080
     targetPort: 80
