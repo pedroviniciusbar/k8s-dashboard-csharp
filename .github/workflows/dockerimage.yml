@@ -65,7 +65,7 @@ jobs:
           manifests: |
             k8s/cluster-role-binding.yaml
             k8s/cluster-role.yaml
-            k8s/deployments.yaml
+            k8s/deployment.yaml
             k8s/service.yaml
             k8s/serviceaccount.yaml
           images: pedrinhof003/k8s-dashboard-csharp:${{ github.run_number }}
