@@ -63,8 +63,8 @@ jobs:
         with:
           namespace: k8s-dashboard-csharp-pedroviniciusbar
           manifests: |
-            k8s/cluster-role-binding.yaml
-            k8s/cluster-role.yaml
+            # k8s/cluster-role-binding.yaml
+            # k8s/cluster-role.yaml
             k8s/deployment.yaml
             k8s/service.yaml
             k8s/serviceaccount.yaml
