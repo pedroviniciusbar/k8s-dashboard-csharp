@@ -1,23 +1,71 @@
-name: Docker Image CI
 
+# This is a basic workflow to help you get started with Actions
+
+
+name: CI-CD
+
+# Controls when the workflow will run
 on:
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
+  # # This workflow contains a single job called "build"
+  CI:
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+ 
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - uses: actions/checkout@v2
-    - name: Build and Push the Docker image
-      uses: docker/build-push-action@v1
-      with:
-        username: ${{ secrets.DOCKER_HUB_LOGIN }}
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-        repository: pedrinhof003/k8s-dashboard-csharp
-        tags: latest, v1
-        dockerfile: ./src/KubernetesApi.Web/Dockerfile
-        path: ./src/
-        
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Docker Login
+        # You may pin to the exact commit or the version.
+        # uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v1.10.0   
+        with:
+          username: ${{ secrets.DOCKER_HUB_LOGIN }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          
+      - name: Build and push Docker images
+        # You may pin to the exact commit or the version.
+        # uses: docker/build-push-action@1bc1040caef9e604eb543693ba89b5bf4fc80935
+        uses: docker/build-push-action@v2.6.1
+        with: 
+          context: ./src
+          file: ./src/KubernetesApi.Web/Dockerfile
+          push: true
+          tags: |
+            pedrinhof003/k8s-dashboard-csharp:latest
+            pedrinhof003/k8s-dashboard-csharp:${{ github.run_number }}
+
+  CD:
+    runs-on: ubuntu-latest
+    needs: [CI]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Kubernetes set context
+        uses: Azure/k8s-set-context@v1.1
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.K8S_CONFIG }}
+          namespace: k8s-dashboard-csharp-pedroviniciusbar
+
+      - name: Deploy dashboard csharp
+        uses: Azure/k8s-deploy@v1
+        with:
+          namespace: k8s-dashboard-csharp-pedroviniciusbar
+          manifests: |
+            k8s/cluster-role-binding.yaml
+            k8s/cluster-role.yaml
+            k8s/deployments.yaml
+            k8s/service.yaml
+            k8s/serviceaccount.yaml
+          images: pedrinhof003/k8s-dashboard-csharp:${{ github.run_number }}
